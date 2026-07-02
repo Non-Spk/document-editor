@@ -29,26 +29,10 @@ private:
 
 class CommandManager {
 public:
-    void executeCommand(std::unique_ptr<ICommand> cmd) {
-        cmd->execute();
-        undoStack.push(std::move(cmd));
-        // clear redo
-        while (!redoStack.empty()) redoStack.pop();
-    }
-    void undo() {
-        if (undoStack.empty()) return;
-        auto& cmd = undoStack.top();
-        cmd->undo();
-        redoStack.push(std::move(undoStack.top()));
-        undoStack.pop();
-    }
-    void redo() {
-        if (redoStack.empty()) return;
-        auto& cmd = redoStack.top();
-        cmd->execute();
-        undoStack.push(std::move(redoStack.top()));
-        redoStack.pop();
-    }
+    // Declarations only; implementations live in CommandImpl.h to avoid duplicate definitions
+    void executeCommand(std::unique_ptr<ICommand> cmd);
+    void undo();
+    void redo();
 private:
     std::stack<std::unique_ptr<ICommand>> undoStack;
     std::stack<std::unique_ptr<ICommand>> redoStack;
