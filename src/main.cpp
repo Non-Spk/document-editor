@@ -9,10 +9,17 @@
 #include "ImageProxy.h"
 #include "FileManagerFacade.h"
 #include "Command.h"
+#include "CommandImpl.h"
 #include "Observer.h"
 #include "State.h"
 #include "Strategy.h"
 #include "IteratorVisitor.h"
+#include "Iterator.h"
+#include "Adapter.h"
+#include "Chain.h"
+#include "Validator.h"
+#include "Interpreter.h"
+#include "Mediator.h"
 
 int main() {
     using namespace std;
@@ -24,8 +31,8 @@ int main() {
     auto doc = builder.header("My Header").footer("Page 1").build();
 
     // Observer
-    StatusBar sb;
-    doc->attach(&sb);
+    auto sb = make_shared<StatusBar>();
+    doc->attach(sb.get());
 
     // Factory
     auto p1 = ElementFactory::create(ElementFactory::Type::ParagraphT, "Hello world from paragraph 1");
@@ -72,6 +79,40 @@ int main() {
 
     cout << "Render with HTMLRenderer:\n";
     for (auto& e : doc->getElements()) e->render(hr);
+
+    // Adapter (legacy drawer)
+    auto legacy = make_shared<LegacyShapeDrawer>();
+    ShapeDrawerAdapter adapter(legacy);
+    adapter.renderImage("/path/to/image.png");
+
+    // Chain of Responsibility
+    auto h1 = make_shared<ClickParagraphHandler>();
+    auto h2 = make_shared<ClickImageHandler>();
+    h1->setNext(h2);
+    Event ev{ "click", "Image", 15, 25 };
+    h1->handle(ev);
+
+    // Template Method (validator)
+    SimpleValidator validator;
+    cout << "Document valid: " << validator.validate(*doc) << "\n";
+
+    // Interpreter (macro): BOLD ALL HEADINGS
+    MacroInterpreter interp;
+    interp.execute("BOLD ALL HEADINGS", doc);
+
+    // Iterator
+    DocumentIterator it(doc);
+    cout << "Iterating document elements:\n";
+    while (it.hasNext()) {
+        auto e = it.next();
+        if (e) cout << " - " << e->serialize() << "\n";
+    }
+
+    // Mediator (UI)
+    UIMediator ui(doc);
+    ui.setStatusBar(sb);
+    ui.addParagraph("Added by mediator");
+    ui.save("document.txt");
 
     // Facade: save
     FileManagerFacade::save(*doc, "document.txt");
