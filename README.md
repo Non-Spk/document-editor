@@ -1,41 +1,39 @@
-# A Framework for a Structured Document Editor
+# Document Editor Framework
 
-This project is a C++ framework for a structured document editor, built with a strong emphasis on Design Patterns and SOLID principles.
+This repository contains a minimal C++ framework for a structured document editor, implemented to demonstrate many classic Design Patterns and SOLID principles.
 
-## Design Overview
+Overview of implemented patterns:
 
-This section will describe the design patterns used in the project and the problems they solve.
+- Singleton: ApplicationSettings (global configuration)
+- Builder: DocumentBuilder to construct Document with header/footer
+- Factory Method: ElementFactory creates Paragraph, Image, Table, Section
+- Prototype: DocumentElement::clone implemented on elements
+- Composite: Section contains children DocumentElements
+- Decorator: BoldDecorator, ItalicDecorator wrapping text elements
+- Flyweight: FontFactory sharing Font instances
+- Proxy: ImageProxy (virtual proxy for lazy image loading)
+- Bridge: DocumentElement uses IRenderer implementations (ConsoleRenderer, HTMLRenderer)
+- Facade: FileManagerFacade for save/load
+- Adapter: (placeholder for integrating legacy drawer, can be extended)
+- Command & Memento: AddElementCommand + Document Memento via serialization string
+- Observer: StatusBar observes Document changes
+- State: DraftState/ReviewState/PublishedState controlling editability
+- Strategy: Export strategies (Markdown, PlainText)
+- Iterator/Visitor: WordCountVisitor visits elements for word counting
 
-*(This will be filled in as the project progresses.)*
+Build & run
 
-## How to Compile and Run
+Requirements: CMake, C++17
 
-This project uses CMake to manage the build process.
+Commands:
 
-### Prerequisites
-- A C++ compiler (supporting C++17)
-- CMake (version 3.10 or higher)
+mkdir build && cd build
+cmake ..
+cmake --build .
+./document-editor
 
-### Build Steps
-1. Create a build directory:
-   ```bash
-   mkdir build
-   cd build
-   ```
-2. Run CMake to configure the project:
-   ```bash
-   cmake ..
-   ```
-3. Compile the project:
-   ```bash
-   cmake --build .
-   ```
-4. Run the executable:
-   On Windows:
-   ```bash
-   .\Debug\DocumentEditor.exe
-   ```
-   On macOS/Linux:
-   ```bash
-   ./DocumentEditor
-   ```
+Design notes
+
+See include/ for header-only implementations. The code is intentionally simplified to focus on patterns rather than full product features.
+
+

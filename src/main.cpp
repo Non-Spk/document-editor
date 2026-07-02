@@ -1,73 +1,83 @@
 #include <iostream>
-#include <memory>
-
-#include "ApplicationSettings.hpp"
-#include "DocumentBuilder.hpp"
-#include "Document.hpp"
-#include "ElementFactory.hpp"
-#include "ImageProxy.hpp"
-#include "ConsoleRenderer.hpp"
-#include "Paragraph.hpp" // Required for ParagraphFactory & clone demo
-
-void printSeparator() {
-    std::cout << "\n----------------------------------------\n" << std::endl;
-}
+#include "ApplicationSettings.h"
+#include "IRenderer.h"
+#include "Elements.h"
+#include "ElementFactory.h"
+#include "Builder.h"
+#include "Decorator.h"
+#include "Flyweight.h"
+#include "ImageProxy.h"
+#include "FileManagerFacade.h"
+#include "Command.h"
+#include "Observer.h"
+#include "State.h"
+#include "Strategy.h"
+#include "IteratorVisitor.h"
 
 int main() {
-    std::cout << "Initializing Document Editor Framework..." << std::endl;
-    printSeparator();
-
-    // --- Creational Patterns Demo ---
-    std::cout << "1. Creational Patterns Demo" << std::endl;
-
+    using namespace std;
     // Singleton
-    ApplicationSettings& settings = ApplicationSettings::getInstance();
-    settings.setDefaultFont("Times New Roman");
-    std::cout << " - Default font from Singleton: " << settings.getDefaultFont() << std::endl;
+    ApplicationSettings::instance().setDefaultFont("Arial");
 
-    // Builder
+    // Build document
     DocumentBuilder builder;
-    std::unique_ptr<Document> doc = builder.setPageSize("A4")
-                                        .setMargins("2.5cm")
-                                        .getDocument();
-    std::cout << " - Document created with Page Size: " << doc->getPageSize() << std::endl;
+    auto doc = builder.header("My Header").footer("Page 1").build();
 
-    // Factory Method to create elements
-    ParagraphFactory pFactory("This is a paragraph created by a factory.");
-    doc->addElement(pFactory.createElement());
-    
-    // Add a proxy for an image. The real image is not loaded yet.
-    doc->addElement(std::make_unique<ImageProxy>("logo.png"));
-    
-    // Prototype: Clone an element.
-    auto p_original = std::make_unique<Paragraph>("This is the original paragraph to be cloned.");
-    auto p_clone = p_original->clone(); // Using the Prototype pattern
-    std::cout << " - Successfully cloned a paragraph element." << std::endl;
-    doc->addElement(std::move(p_original));
-    doc->addElement(std::move(p_clone));
+    // Observer
+    StatusBar sb;
+    doc->attach(&sb);
 
-    printSeparator();
+    // Factory
+    auto p1 = ElementFactory::create(ElementFactory::Type::ParagraphT, "Hello world from paragraph 1");
+    auto p2 = ElementFactory::create(ElementFactory::Type::ParagraphT, "Another paragraph here");
+    auto img = std::make_shared<ImageProxy>("/path/to/image.png");
 
-    // --- Structural Patterns Demo ---
-    std::cout << "2. Structural Patterns Demo" << std::endl;
-    
-    // Bridge, Proxy, and Composite
-    ConsoleRenderer renderer;
-    std::cout << " - Drawing document using ConsoleRenderer..." << std::endl;
+    // Composite
+    auto sec = std::make_shared<Section>("Introduction");
+    sec->add(p1);
+    sec->add(img);
+    sec->add(p2);
 
-    // The Document acts as a Composite. Drawing it will draw all its children.
-    // The draw call on the ImageProxy will trigger the Proxy pattern's lazy loading.
-    doc->draw(renderer);
+    doc->addElement(sec);
 
-    printSeparator();
-    
-    // Draw the document again to show the proxy doesn't load the image a second time.
-    std::cout << " - Drawing document again..." << std::endl;
-    doc->draw(renderer);
-    
-    printSeparator();
+    // Decorator
+    auto boldP = std::make_shared<BoldDecorator>(p2);
+    doc->addElement(boldP);
 
-    std::cout << "Framework demonstration complete." << std::endl;
+    // Flyweight
+    FontFactory ff;
+    auto f1 = ff.get("Arial", 12, "black");
+    auto f2 = ff.get("Arial", 12, "black");
+    cout << "Font instances same: " << (f1 == f2) << "\n";
+
+    // Command + Memento
+    CommandManager cm;
+    auto p3 = ElementFactory::create(ElementFactory::Type::ParagraphT, "Inserted via command");
+    cm.executeCommand(std::make_unique<AddElementCommand>(doc, p3));
+
+    // Visitor
+    WordCountVisitor wcv;
+    for (auto& e : doc->getElements()) e->accept(wcv);
+    cout << "Word count: " << wcv.getCount() << "\n";
+
+    // Strategy
+    doc->setExportStrategy(new ExportAsMarkdown());
+    cout << "Export:\n" << doc->exportDocument() << "\n";
+
+    // Rendering (Bridge)
+    ConsoleRenderer cr;
+    HTMLRenderer hr;
+    cout << "Render with ConsoleRenderer:\n";
+    for (auto& e : doc->getElements()) e->render(cr);
+
+    cout << "Render with HTMLRenderer:\n";
+    for (auto& e : doc->getElements()) e->render(hr);
+
+    // Facade: save
+    FileManagerFacade::save(*doc, "document.txt");
+
+    // Undo
+    cm.undo();
 
     return 0;
 }
