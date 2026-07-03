@@ -1,21 +1,36 @@
 #include "ImageProxy.hpp"
-#include "RealImage.hpp" // Needs the full definition to create the object
-#include "IRenderer.hpp" // For the renderer interface
+#include "RealImage.hpp"
+#include "IRenderer.hpp"
+#include "IDocumentVisitor.hpp"
 #include <iostream>
 
-// The draw method is the trigger for loading the real object.
-void ImageProxy::draw(IRenderer& renderer) const {
+ImageProxy::ImageProxy(std::string filePath) : m_filePath(std::move(filePath)), m_realImage(nullptr) {}
+
+ImageProxy::~ImageProxy() = default;
+
+void ImageProxy::draw(IRenderer &renderer) const
+{
     std::cout << "ImageProxy: draw() called. ";
-    ensureImageLoaded(); // Lazy initialization happens here.
-    m_realImage->draw(renderer); // Delegate the draw call to the real object.
+    ensureImageLoaded();
+    m_realImage->draw(renderer);
 }
 
-// Private helper to perform the lazy loading.
-void ImageProxy::ensureImageLoaded() const {
-    if (!m_realImage) {
+void ImageProxy::accept(IDocumentVisitor &visitor) const
+{
+    // The proxy visits without forcing a load: most visitors (word count,
+    // xml export) only need metadata like the file path.
+    visitor.visit(*this);
+}
+
+void ImageProxy::ensureImageLoaded() const
+{
+    if (!m_realImage)
+    {
         std::cout << "Instantiating RealImage for the first time." << std::endl;
         m_realImage = std::make_unique<RealImage>(m_filePath);
-    } else {
+    }
+    else
+    {
         std::cout << "RealImage already loaded." << std::endl;
     }
 }

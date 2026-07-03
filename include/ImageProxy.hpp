@@ -2,36 +2,39 @@
 #define IMAGE_PROXY_HPP
 
 #include "DocumentElement.hpp"
+#include "RealImage.hpp"
 #include <string>
 #include <memory>
 #include <utility>
 
-// Forward declare RealImage to avoid including its full header here.
-class RealImage;
-
-// The Proxy class for RealImage (Virtual Proxy).
-// It controls access to the RealImage object, creating it only when needed.
-class ImageProxy : public DocumentElement {
+// Virtual Proxy Pattern: stands in for RealImage and defers the expensive
+// load until draw() is actually called.
+class ImageProxy : public DocumentElement
+{
 public:
-    explicit ImageProxy(std::string filePath) : m_filePath(std::move(filePath)), m_realImage(nullptr) {}
+    // Both are declared here but defined in the .cpp (where RealImage is
+    // a complete type). This keeps std::unique_ptr<RealImage>'s deleter
+    // (and the exception-unwind cleanup code the compiler generates for
+    // this constructor) from being instantiated against an incomplete
+    // type at header-inclusion sites.
+    explicit ImageProxy(std::string filePath);
+    ~ImageProxy() override;
 
-    // Prototype implementation for the proxy
-    std::unique_ptr<DocumentElement> clone() const override {
-        // Clones the proxy, not the real image yet. The new proxy will also lazy load.
+    std::unique_ptr<DocumentElement> clone() const override
+    {
+        // Cloning the proxy does NOT force-load the real image.
         return std::make_unique<ImageProxy>(m_filePath);
     }
-    
-    void draw(IRenderer& renderer) const override;
 
-    const std::string& getFilePath() const { return m_filePath; }
+    void draw(IRenderer &renderer) const override;
+    void accept(IDocumentVisitor &visitor) const override;
+
+    const std::string &getFilePath() const { return m_filePath; }
 
 private:
-    // The proxy maintains a reference to the real subject.
-    // It's mutable so we can lazy-initialize it in the const 'draw' method.
-    mutable std::unique_ptr<RealImage> m_realImage;
     std::string m_filePath;
+    mutable std::unique_ptr<RealImage> m_realImage;
 
-    // Helper function to create the RealImage on demand.
     void ensureImageLoaded() const;
 };
 
