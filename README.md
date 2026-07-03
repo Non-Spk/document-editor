@@ -31,7 +31,7 @@ prints what's happening at each step.
 
 ## Architecture at a Glance
 
-```
+``` sh
 DocumentElement (abstract)
  ├── Paragraph                (leaf)
  ├── RealImage                (leaf, "heavy" real subject)
@@ -62,7 +62,7 @@ IDocumentVisitor (abstract)    (Visitor)
 ### Creational
 
 | Pattern | Where | Why |
-|---|---|---|
+| --- | --- | --- |
 | **Singleton** | `ApplicationSettings` | One global source of truth for default font/page size. Meyers' singleton (function-local `static`) — lazy-initialized and thread-safe in C++11+, no manual lifetime management needed. |
 | **Builder** | `DocumentBuilder` | `Document` construction involves several optional, order-independent fields (page size, margins, header, footer). The fluent builder keeps `Document`'s constructor simple and makes call sites self-documenting. |
 | **Factory Method** | `ElementFactory` + `ParagraphFactory` / `ImageFactory` / `SectionFactory` | Client code creates elements through a common interface (`createElement()`); adding a new element type only means adding a new factory subclass, never touching existing call sites (Open/Closed Principle). |
@@ -71,7 +71,7 @@ IDocumentVisitor (abstract)    (Visitor)
 ### Structural
 
 | Pattern | Where | Why |
-|---|---|---|
+| --- | --- | --- |
 | **Composite** | `Section` | A `Section` *is* a `DocumentElement` and *contains* `DocumentElement`s (including nested `Section`s), so client code (rendering, word-counting, exporting) treats a single paragraph and a whole nested section identically. |
 | **Decorator** | `TextDecorator` (abstract) → `BoldDecorator`, `ItalicDecorator` | Formatting is optional and combinable (`Bold(Italic(paragraph))`) without an explosion of subclasses like `BoldItalicParagraph`. Decorators forward `accept()` straight to the wrapped element, so a `WordCountVisitor` still "sees through" the formatting to the underlying text. |
 | **Flyweight** | `CharacterFormat` + `CharacterFormatFactory` | Character-level formatting (font/size/color) repeats constantly across a document. The factory caches instances by intrinsic state so identical requests share one object instead of allocating a new one every time — demonstrated in `main.cpp` by comparing pointers. |
@@ -83,7 +83,7 @@ IDocumentVisitor (abstract)    (Visitor)
 ### Behavioral
 
 | Pattern | Where | Why |
-|---|---|---|
+| --- | --- | --- |
 | **Command + Memento** | `ICommand` / `AddElementCommand` / `CommandManager`, `DocumentMemento` | Every edit is an `ICommand` object so it can be executed, queued, and undone uniformly. `AddElementCommand::execute()` takes a `DocumentMemento` snapshot (via `Document::createMemento()`, itself built on `Section::clone()` — Prototype in action) *before* mutating; `undo()` restores it. `CommandManager` is the caretaker holding undo/redo stacks. |
 | **Observer** | `IObservable`/`IObserver`, `Document` (subject) / `StatusBar` (observer) | `Document::addElement()` calls `notifyObservers()`; `StatusBar` reacts by recomputing word count via a `WordCountVisitor`. Adding more observers (e.g. a page-count widget) needs no changes to `Document`. |
 | **State** | `DocumentState` → `DraftState` / `ReviewState` / `PublishedState` | `Document::edit()` delegates to the current state object instead of branching on an enum; transitioning `setState(...)` changes behavior at runtime without `Document` knowing the rules for each phase. |
