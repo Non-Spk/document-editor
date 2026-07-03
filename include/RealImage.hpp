@@ -1,7 +1,7 @@
 #ifndef REAL_IMAGE_HPP
 #define REAL_IMAGE_HPP
 
-#include "DocumentElement.hpp"
+#include "DocumentElement.h"
 #include <string>
 #include <iostream>
 #include <utility>
@@ -15,12 +15,12 @@ public:
     }
 
     // Prototype implementation
-    std::unique_ptr<DocumentElement> clone() const override {
+    std::shared_ptr<DocumentElement> clone() const override {
         // Cloning a real image means creating another fully loaded image
-        return std::make_unique<RealImage>(*this);
+        return std::make_shared<RealImage>(*this);
     }
 
-    void draw(IRenderer& renderer) const override;
+    void render(IRenderer& renderer) const override;
 
     const std::string& getFilePath() const { return m_filePath; }
 

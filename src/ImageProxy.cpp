@@ -8,14 +8,14 @@ ImageProxy::ImageProxy(std::string filePath) : m_filePath(std::move(filePath)), 
 
 ImageProxy::~ImageProxy() = default;
 
-void ImageProxy::draw(IRenderer &renderer) const
+void ImageProxy::render(IRenderer &renderer) const
 {
-    std::cout << "ImageProxy: draw() called. ";
+    std::cout << "ImageProxy: render() called. ";
     ensureImageLoaded();
-    m_realImage->draw(renderer);
+    m_realImage->render(renderer);
 }
 
-void ImageProxy::accept(IDocumentVisitor &visitor) const
+void ImageProxy::accept(IDocumentVisitor &visitor)
 {
     // The proxy visits without forcing a load: most visitors (word count,
     // xml export) only need metadata like the file path.
