@@ -1,7 +1,7 @@
 #include "ImageProxy.hpp"
 #include "RealImage.hpp"
 #include "IRenderer.hpp"
-#include "IDocumentVisitor.hpp"
+#include "IteratorVisitor.h"
 #include <iostream>
 
 ImageProxy::ImageProxy(std::string filePath) : m_filePath(std::move(filePath)), m_realImage(nullptr) {}
